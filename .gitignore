@@ -1,2 +1,6 @@
 /dist
 /build
+/bin
+/xtables-bin
+/etc
+/.dapper

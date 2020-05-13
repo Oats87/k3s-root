@@ -1,0 +1,53 @@
+#!/bin/bash
+
+mkdir -p /source/bin /source/xtables-bin /source/etc /source/dist
+
+pushd /usr/src
+
+# copy binaries
+cp -d buildroot/output/target/usr/sbin/*tables* /source/bin/ 
+cp buildroot/output/target/usr/sbin/conntrack /source/bin/ 
+cp buildroot/output/target/usr/sbin/ethtool /source/bin/ 
+cp buildroot/output/target/usr/sbin/ipset /source/bin/ 
+cp buildroot/output/target/usr/bin/find /source/bin/ 
+cp buildroot/output/target/usr/bin/nsenter /source/bin/ 
+cp buildroot/output/target/usr/bin/pigz /source/bin/ 
+cp buildroot/output/target/usr/bin/slirp4netns /source/bin/ 
+cp buildroot/output/target/usr/bin/socat /source/bin/ 
+cp buildroot/output/target/usr/bin/coreutils /source/bin/ 
+cp buildroot/output/target/sbin/ip /source/bin/ 
+cp buildroot/output/target/sbin/blkid /source/bin/ 
+cp buildroot/output/target/sbin/losetup /source/bin/ 
+cp buildroot/output/target/bin/busybox /source/bin/ 
+cp buildroot/output/target/usr/sbin/swanctl /source/bin/ 
+cp buildroot/output/target/usr/libexec/ipsec/charon /source/bin/
+
+# save etc
+cp -rp buildroot/output/target/var/lib/rancher/k3s/agent/* /source/etc/
+
+cp -r /source/iptables-detect/*.sh /source/xtables-bin/
+
+# setup links
+link() { \
+    for l in $(find -L buildroot/output/target/ -samefile buildroot/output/target/$1/$2 | xargs -n 1 basename | sort -u | grep -v "^$2\$"); do \
+        ln -s $2 /source/bin/$l; \
+    done; \
+};
+
+link bin busybox;
+link usr/bin coreutils;
+ln -sf pigz /source/bin/unpigz;
+mkdir -p /source/bin/aux;
+rm -f /source/bin/mount;
+rm -f /source/bin/modprobe;
+ln -sf ../busybox /source/bin/aux/mount;
+ln -sf ../busybox /source/bin/aux/modprobe;
+mv /source/bin/*tables* /source/xtables-bin/;
+for target in iptables iptables-save iptables-restore ip6tables ip6tables-save ip6tables-restore; do
+    ln -sf iptables-detect.sh /source/xtables-bin/$target;
+done;
+cp -rp /source/xtables-bin/* /source/bin/aux;
+
+tar cf - -C /source ./bin ./etc > /source/dist/k3s-root-${BUILDARCH}.tar
+tar cf - -C /source --transform s/xtables-bin/bin/ ./xtables-bin > /source/dist/k3s-root-xtables-${BUILDARCH}.tar
+popd
