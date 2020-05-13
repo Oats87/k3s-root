@@ -71,4 +71,31 @@ RUN set -e -x; \
         done; \
     }; \
     link bin busybox; \
-    link usr/bin coreutils;
+    link usr/bin coreutils; \
+    mkdir -p bin/aux; \
+    mv bin/iptables* bin/aux/; \
+    mv bin/ip6tables* bin/aux/; \
+    mv bin/ebtables* bin/aux/; \
+    mv bin/arptables* bin/aux/; \
+    mv bin/xtables* bin/aux/; \
+    ln -sf iptables-detect.sh bin/aux/iptables; \
+    ln -sf iptables-detect.sh bin/aux/iptables-save; \
+    ln -sf iptables-detect.sh bin/aux/iptables-restore; \
+    ln -sf iptables-detect.sh bin/aux/ip6tables; \
+    ln -sf iptables-detect.sh bin/aux/ip6tables-save; \
+    ln -sf iptables-detect.sh bin/aux/ip6tables-restore; \ 
+    mkdir -p xtables-bin; \
+    cp -r bin/aux/iptables* xtables-bin/; \
+    cp -r bin/aux/ip6tables* xtables-bin/; \
+    cp -r bin/aux/ebtables* xtables-bin/; \
+    cp -r bin/aux/arptables* xtables-bin/; \
+    cp -r bin/aux/xtables* xtables-bin/; \
+    ln -sf iptables-detect.sh xtables-bin/iptables; \
+    ln -sf iptables-detect.sh xtables-bin/iptables-save; \
+    ln -sf iptables-detect.sh xtables-bin/iptables-restore; \
+    ln -sf iptables-detect.sh xtables-bin/ip6tables; \
+    ln -sf iptables-detect.sh xtables-bin/ip6tables-save; \
+    ln -sf iptables-detect.sh xtables-bin/ip6tables-restore;
+
+COPY iptables-detect/* bin/aux/
+COPY iptables-detect/* xtables-bin/
