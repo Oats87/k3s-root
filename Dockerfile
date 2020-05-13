@@ -60,8 +60,11 @@ RUN mkdir bin && \
     cp buildroot/output/target/usr/libexec/ipsec/charon bin/
 
 # save etc
-RUN mkdir etc && \
-    cp -rp buildroot/output/target/var/lib/rancher/k3s/agent/* etc/
+RUN mkdir etc; \
+    cp -rp buildroot/output/target/var/lib/rancher/k3s/agent/* etc/; \
+    mkdir -p xtables-bin
+
+COPY iptables-detect/* xtables-bin/
 
 # setup links
 RUN set -e -x; \
@@ -71,4 +74,19 @@ RUN set -e -x; \
         done; \
     }; \
     link bin busybox; \
-    link usr/bin coreutils;
+    link usr/bin coreutils; \
+    ln -sf pigz bin/unpigz; \
+    mkdir -p bin/aux; \
+    rm -f bin/mount; \
+    rm -f bin/modprobe; \
+    ln -sf ../busybox bin/aux/mount; \
+    ln -sf ../busybox bin/aux/modprobe; \
+    mv bin/*tables* xtables-bin/; \
+    for target in iptables iptables-save iptables-restore ip6tables ip6tables-save ip6tables-restore; do\
+        ln -sf iptables-detect.sh xtables-bin/$target; \
+    done; \
+    cp -rp xtables-bin/* bin/aux;
+
+RUN cp -r bin /shared/; \
+    cp -r etc /shared/; \
+    cp -r xtables-bin /shared/;
