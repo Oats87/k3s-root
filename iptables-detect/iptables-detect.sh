@@ -61,14 +61,100 @@ alternatives_check() {
     fi
 }
 
-proc_modules_check() {
-    num_nft_modules_lines=$(cat /proc/modules | grep "nf_tables" | wc -l)
-    if [ "${num_nft_modules_lines}" -ge 1 ]; then
-        mode=nft
-    else
-        mode=legacy
-    # fall back to legacy in the event we do not find nf_tables modules in /proc/modules
-    fi
+# we should not run os-detect if we're being run inside of a container
+os_detect()
+{
+    # perform some very rudimentary platform detection
+	lsb_dist=''
+	dist_version=''
+	if [ -z "$lsb_dist" ] && [ -r /etc/lsb-release ]; then
+		lsb_dist="$(. /etc/lsb-release && echo "$DISTRIB_ID")"
+	fi
+	if [ -z "$lsb_dist" ] && [ -r /etc/debian_version ]; then
+		lsb_dist='debian'
+	fi
+	if [ -z "$lsb_dist" ] && [ -r /etc/fedora-release ]; then
+		lsb_dist='fedora'
+	fi
+	if [ -z "$lsb_dist" ] && [ -r /etc/oracle-release ]; then
+		lsb_dist='oracleserver'
+	fi
+	if [ -z "$lsb_dist" ] && [ -r /etc/centos-release ]; then
+		lsb_dist='centos'
+	fi
+	if [ -z "$lsb_dist" ] && [ -r /etc/redhat-release ]; then
+		lsb_dist='redhat'
+	fi
+	if [ -z "$lsb_dist" ] && [ -r /etc/os-release ]; then
+		lsb_dist="$(. /etc/os-release && echo "$ID")"
+	fi
+
+    lsb_dist="$(echo "$lsb_dist" | tr '[:upper:]' '[:lower:]')"
+
+	# Special case redhatenterpriseserver
+	if [ "${lsb_dist}" = "redhatenterpriseserver" ]; then
+		# Set it to redhat, it will be changed to centos below anyways
+		lsb_dist='redhat'
+	fi
+
+    case "$lsb_dist" in
+
+		ubuntu)
+			if [ -z "$dist_version" ] && [ -r /etc/lsb-release ]; then
+				dist_version="$(. /etc/lsb-release && echo "$DISTRIB_RELEASE" | sed 's/\/.*//' | sed 's/\..*//')"
+                if [ "$dist_version" -ge 20 ]; then
+                    mode=nft
+                    else
+                    mode=legacy
+                fi
+			else
+            # fall back to NFT
+                mode=nft
+            fi
+		;;
+
+		debian|raspbian)
+			dist_version="$(cat /etc/debian_version | sed 's/\/.*//' | sed 's/\..*//')"
+            # If Debian >= 10 (Buster is 10), then NFT. otherwise, assume it is legacy
+			if [ "$dist_version" -ge 10 ]; then
+                mode=nft
+                else
+                mode=legacy
+            fi
+		;;
+
+		oracleserver)
+			# need to switch lsb_dist to match yum repo URL
+			lsb_dist="oraclelinux"
+			dist_version="$(rpm -q --whatprovides redhat-release --queryformat "%{VERSION}\n" | sed 's/\/.*//' | sed 's/\..*//' | sed 's/Server*//')"
+		;;
+
+        fedora)
+            # As of 05/15/2020, all Fedora packages appeared to be still `legacy` by default although there is a `iptables-nft` package that installs the nft iptables, so look for that package.
+            rpm -qa | grep -q "iptables-nft"
+            if [ "$?" = 0 ]; then
+            mode=nft
+            else
+            mode=legacy
+            fi
+        ;;
+
+		centos|redhat)
+            dist_version="$(. /etc/os-release && echo "$VERSION_ID")"
+			if [ "$dist_version" -ge 8 ]; then
+                mode=nft
+                else
+                mode=legacy
+            fi
+		;;
+
+        # We are running an operating system we don't know, default to nf_tables.
+		*)
+			mode=nft
+		;;
+
+
+	esac
 }
 
 if [ ! -z "$IPTABLES_MODE" ]; then
@@ -78,7 +164,7 @@ else
     if [ ${mode} == "unknown" ]; then
         alternatives_check
         if [ ${mode} == "unknown" ]; then
-            proc_modules_check
+            os_detect
         fi
     fi
 fi
