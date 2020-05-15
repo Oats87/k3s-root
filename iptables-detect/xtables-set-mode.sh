@@ -18,8 +18,10 @@ script_name=xtables-set-mode.sh
 validate() {
     # The existence of the iptables-set-mode.sh in the path indicates the directory we should be calling from.
     # Don't put this script in your path unless you want this script to overwrite your iptables links.
-    if ! which $script_name >/dev/null; then
-        fatal "$script_name was not found in PATH"
+    if [ "${force}" = 0 ]; then
+        if ! which $script_name >/dev/null; then
+            fatal "$script_name was not found in PATH"
+        fi
     fi
 }
 
@@ -43,10 +45,9 @@ usage() {
     echo "usage: $script_name [[--mode nft|legacy] [--force] | [--help]]"
 }
 
-interactive=
 force=0
 
-if [ "$1" == "" ]; then
+if [ -z "$1" ]; then
     usage
     exit 1
 fi
