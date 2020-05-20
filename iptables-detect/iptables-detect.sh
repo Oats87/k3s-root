@@ -15,10 +15,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# This script is only meant for use when operating in a non-containerized environment but using non-host binaries (i.e. K3s with k3s-root)
+
 # Four step process to inspect for which version of iptables we're operating with.
 # 1. Run iptables-nft-save and iptables-legacy-save to inspect for rules. If no rules are found from either binaries, then
 # 2. Check /etc/alternatives/iptables on the host to see if there is a symlink pointing towards the iptables binary we are using, if there is, run the binary and grep it's output for version higher than 1.8 and "legacy" to see if we are operating in legacy
-# 3. Last chance to detect is to inspect `/proc/modules` to check for `nft` modules being existent, if there are, then operate in `nft` mode, otherwise, operate in legacy.
+# 3. Last chance is to do a rough check of the operating system, to make an educated guess at which mode we can operate in.
 
 # Bugs in iptables-nft 1.8.3 may cause it to get stuck in a loop in
 # some circumstances, so we have to run the nft check in a timeout. To
@@ -97,17 +99,19 @@ os_detect() {
     case "$lsb_dist" in
 
     ubuntu)
-        if [ -z "$dist_version" ] && [ -r /etc/lsb-release ]; then
-            dist_version="$(. /etc/lsb-release && echo "$DISTRIB_RELEASE" | sed 's/\/.*//' | sed 's/\..*//')"
-            if [ "$dist_version" -ge 20 ]; then
-                mode=nft
-            else
-                mode=legacy
-            fi
-        else
-            # fall back to NFT
-            mode=nft
-        fi
+        #if [ -z "$dist_version" ] && [ -r /etc/lsb-release ]; then
+        #    dist_version="$(. /etc/lsb-release && echo "$DISTRIB_RELEASE" | sed 's/\/.*//' | sed 's/\..*//')"
+        #    if [ "$dist_version" -ge 20 ]; then
+        #        mode=nft
+        #    else
+        #        mode=legacy
+        #    fi
+        #else
+        #    # fall back to NFT
+        #    mode=nft
+        #fi
+        mode=legacy
+        #By default, Ubuntu is using iptables in legacy mode. Ideally, this should have been already caught by the alternatives check.
         ;;
 
     debian | raspbian)

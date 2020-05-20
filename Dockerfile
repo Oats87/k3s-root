@@ -57,8 +57,6 @@ RUN mkdir bin && \
     cp buildroot/output/target/usr/sbin/swanctl bin/ && \
     cp buildroot/output/target/usr/libexec/ipsec/charon bin/
 
-COPY iptables-detect/* bin/
-
 # save etc
 RUN mkdir etc && \
     cp -rp buildroot/output/target/var/lib/rancher/k3s/agent/* etc/
@@ -72,9 +70,17 @@ RUN set -e -x; \
     }; \
     link bin busybox; \
     link usr/bin coreutils; \
-    ln -sf iptables-detect.sh bin/iptables; \
-    ln -sf iptables-detect.sh bin/iptables-save; \
-    ln -sf iptables-detect.sh bin/iptables-restore; \
-    ln -sf iptables-detect.sh bin/ip6tables; \
-    ln -sf iptables-detect.sh bin/ip6tables-save; \
-    ln -sf iptables-detect.sh bin/ip6tables-restore;  
+    mkdir -p bin/aux; \
+    mv bin/iptables* bin/aux/; \
+    mv bin/ip6tables* bin/aux/; \
+    mv bin/ebtables* bin/aux/; \
+    mv bin/arptables* bin/aux/; \
+    mv bin/xtables* bin/aux/; \
+    ln -sf iptables-detect.sh bin/aux/iptables; \
+    ln -sf iptables-detect.sh bin/aux/iptables-save; \
+    ln -sf iptables-detect.sh bin/aux/iptables-restore; \
+    ln -sf iptables-detect.sh bin/aux/ip6tables; \
+    ln -sf iptables-detect.sh bin/aux/ip6tables-save; \
+    ln -sf iptables-detect.sh bin/aux/ip6tables-restore; 
+
+COPY iptables-detect/* bin/aux/
