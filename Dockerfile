@@ -60,8 +60,11 @@ RUN mkdir bin && \
     cp buildroot/output/target/usr/libexec/ipsec/charon bin/
 
 # save etc
-RUN mkdir etc && \
-    cp -rp buildroot/output/target/var/lib/rancher/k3s/agent/* etc/
+RUN mkdir etc; \
+    cp -rp buildroot/output/target/var/lib/rancher/k3s/agent/* etc/; \
+    mkdir -p xtables-bin
+
+COPY iptables-detect/* xtables-bin/
 
 # setup links
 RUN set -e -x; \
@@ -72,30 +75,14 @@ RUN set -e -x; \
     }; \
     link bin busybox; \
     link usr/bin coreutils; \
+    ln -sf pigz bin/unpigz; \
     mkdir -p bin/aux; \
-    mv bin/iptables* bin/aux/; \
-    mv bin/ip6tables* bin/aux/; \
-    mv bin/ebtables* bin/aux/; \
-    mv bin/arptables* bin/aux/; \
-    mv bin/xtables* bin/aux/; \
-    ln -sf iptables-detect.sh bin/aux/iptables; \
-    ln -sf iptables-detect.sh bin/aux/iptables-save; \
-    ln -sf iptables-detect.sh bin/aux/iptables-restore; \
-    ln -sf iptables-detect.sh bin/aux/ip6tables; \
-    ln -sf iptables-detect.sh bin/aux/ip6tables-save; \
-    ln -sf iptables-detect.sh bin/aux/ip6tables-restore; \ 
-    mkdir -p xtables-bin; \
-    cp -r bin/aux/iptables* xtables-bin/; \
-    cp -r bin/aux/ip6tables* xtables-bin/; \
-    cp -r bin/aux/ebtables* xtables-bin/; \
-    cp -r bin/aux/arptables* xtables-bin/; \
-    cp -r bin/aux/xtables* xtables-bin/; \
-    ln -sf iptables-detect.sh xtables-bin/iptables; \
-    ln -sf iptables-detect.sh xtables-bin/iptables-save; \
-    ln -sf iptables-detect.sh xtables-bin/iptables-restore; \
-    ln -sf iptables-detect.sh xtables-bin/ip6tables; \
-    ln -sf iptables-detect.sh xtables-bin/ip6tables-save; \
-    ln -sf iptables-detect.sh xtables-bin/ip6tables-restore;
-
-COPY iptables-detect/* bin/aux/
-COPY iptables-detect/* xtables-bin/
+    rm -f bin/mount; \
+    rm -f bin/modprobe; \
+    ln -sf ../busybox bin/aux/mount; \
+    ln -sf ../busybox bin/aux/modprobe; \
+    mv bin/*tables* xtables-bin/; \
+    for target in iptables iptables-save iptables-restore ip6tables ip6tables-save ip6tables-restore; do\
+        ln -sf iptables-detect.sh xtables-bin/$target; \
+    done; \
+    cp -rp xtables-bin/* bin/aux;
