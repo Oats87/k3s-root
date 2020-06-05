@@ -29,6 +29,31 @@
 
 mode=unknown
 
+containerized=false 
+
+# Check to see if the nf_tables kernel module is loaded, if it is, we should operate in nft mode, else just fall back to legacy. This should only be run when in a container, ideally the klipper-lb container. 
+
+nft_module_check() {
+    lsmod | grep "nf_tables" 2> /dev/null
+    if [ $? = 0 ]; then
+        mode = nft
+    else
+        mode = legacy
+    fi
+}
+
+# Check to see if we are containerized -- essentially look at the cgroup for PID 1 and check for things at the end of the "/" which indicates we are in a container (PID 1 shouldn't necessarily have a cgroup)
+
+# there are two cases when we are containerized -- k3d and things that aren't k3s
+is_containerzed() {
+    CGT=$(cat /proc/1/cgroup | grep "cpuset" | awk -F: '{print $3}' | sed 's/\///g'); 
+    if [ -z $CGT ]; then
+        containerized=false 
+    else 
+        containerized=true 
+    fi
+}
+
 rule_check() {
     num_legacy_lines=$( (
         iptables-legacy-save || true
@@ -133,7 +158,7 @@ os_detect() {
     fedora)
         # As of 05/15/2020, all Fedora packages appeared to be still `legacy` by default although there is a `iptables-nft` package that installs the nft iptables, so look for that package.
         rpm -qa | grep -q "iptables-nft"
-        if [ "$?" = 0 ]; then
+        if [ $? = 0 ]; then
             mode=nft
         else
             mode=legacy
@@ -163,13 +188,27 @@ if [ ! -z "$IPTABLES_MODE" ]; then
 else
     rule_check
     if [ "${mode}" = "unknown" ]; then
-        alternatives_check
-        if [ "${mode}" = "unknown" ]; then
-            os_detect
+        is_containerized
+        # If we're containerized, then just fall back to legacy, in hopes `ip_tables` is loaded.
+        if [ "${containerized}" = "true" ]; then
+            nft_module_check
+        else 
+            alternatives_check
+            if [ "${mode}" = "unknown" ]; then
+                os_detect
+            fi
         fi
     fi
 fi
 
+if [ "${mode}" = "unknown" ]; then
+    exit 1
+fi
+
 xtables-set-mode.sh -m ${mode} >/dev/null
 
-exec "$0" "$@"
+if [ $? = 0 ]; then
+    exec "$0" "$@"
+else
+    exit 1
+fi
