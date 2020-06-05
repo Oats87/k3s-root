@@ -191,7 +191,7 @@ else
         is_containerized
         # If we're containerized, then just fall back to legacy, in hopes `ip_tables` is loaded.
         if [ "${containerized}" = "true" ]; then
-            nft_module_check
+            mode=legacy
         else 
             alternatives_check
             if [ "${mode}" = "unknown" ]; then
