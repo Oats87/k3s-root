@@ -18,9 +18,6 @@ steps:
     volumes:
     - name: docker
       path: /var/run/docker.sock
-    when:
-      event:
-      - tag
   - name: stage-amd64-binaries
     image: ubuntu:18.04
     commands:
@@ -28,6 +25,9 @@ steps:
     - "tar cf - -C /workdir ./bin ./etc > /workdir/dist/k3s-root-amd64.tar"
     - "tar cf - -C /workdir --transform s/xtables-bin/bin/ ./xtables-bin > /workdir/dist/k3s-root-xtables-amd64.tar"
     when:
+      ref:
+      - refs/head/master
+      - refs/tags/*
       event:
       - tag
   - name: github-amd64-binary-release
@@ -43,6 +43,9 @@ steps:
       files:
       - "/workdir/dist/k3s-*.tar"
     when:
+      ref:
+      - refs/head/master
+      - refs/tags/*
       event:
       - tag
 volumes:
@@ -69,9 +72,6 @@ steps:
     volumes:
     - name: docker
       path: /var/run/docker.sock
-    when:
-      event:
-      - tag
   - name: stage-arm64-binaries
     image: ubuntu:18.04
     commands:
@@ -79,6 +79,9 @@ steps:
     - "tar cf - -C /workdir ./bin ./etc > /workdir/dist/k3s-root-arm64.tar"
     - "tar cf - -C /workdir --transform s/xtables-bin/bin/ ./xtables-bin > /workdir/dist/k3s-root-xtables-arm64.tar"
     when:
+      ref:
+      - refs/head/master
+      - refs/tags/*
       event:
       - tag
   - name: github-arm64-binary-release
@@ -94,6 +97,9 @@ steps:
       files:
       - "/workdir/dist/k3s-*.tar"
     when:
+      ref:
+      - refs/head/master
+      - refs/tags/*
       event:
       - tag
 volumes:
@@ -120,9 +126,6 @@ steps:
     volumes:
     - name: docker
       path: /var/run/docker.sock
-    when:
-      event:
-      - tag
   - name: stage-arm-binaries
     image: ubuntu:18.04
     commands:
@@ -130,6 +133,9 @@ steps:
     - "tar cf - -C /workdir ./bin ./etc > /workdir/dist/k3s-root-arm.tar"
     - "tar cf - -C /workdir --transform s/xtables-bin/bin/ ./xtables-bin > /workdir/dist/k3s-root-xtables-arm.tar"
     when:
+      ref:
+      - refs/head/master
+      - refs/tags/*
       event:
       - tag
   - name: github-arm-binary-release
@@ -145,6 +151,9 @@ steps:
       files:
       - "/workdir/dist/k3s-*.tar"
     when:
+      ref:
+      - refs/head/master
+      - refs/tags/*
       event:
       - tag
 volumes:
@@ -171,9 +180,6 @@ steps:
     volumes:
     - name: docker
       path: /var/run/docker.sock
-    when:
-      event:
-      - tag
   - name: stage-ppc64le-binaries
     image: ubuntu:18.04
     commands:
@@ -181,6 +187,9 @@ steps:
     - "tar cf - -C /workdir ./bin ./etc > /workdir/dist/k3s-root-ppc64le.tar"
     - "tar cf - -C /workdir --transform s/xtables-bin/bin/ ./xtables-bin > /workdir/dist/k3s-root-xtables-ppc64le.tar"
     when:
+      ref:
+      - refs/head/master
+      - refs/tags/*
       event:
       - tag
   - name: github-ppc64le-binary-release
@@ -196,6 +205,9 @@ steps:
       files:
       - "/workdir/dist/k3s-*.tar"
     when:
+      ref:
+      - refs/head/master
+      - refs/tags/*
       event:
       - tag
 volumes:
