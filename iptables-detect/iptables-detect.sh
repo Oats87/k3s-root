@@ -61,7 +61,7 @@ nft_module_check() {
 # Check to see if we are containerized -- essentially look at the cgroup for PID 1 and check for things at the end of the "/" which indicates we are in a container (PID 1 shouldn't necessarily have a cgroup)
 
 # there are two cases when we are containerized -- k3d and things that aren't k3s
-is_containerzed() {
+is_containerized() {
     CGT=$(cat /proc/1/cgroup | grep "cpuset" | awk -F: '{print $3}' | sed 's/\///g'); 
     if [ -z $CGT ]; then
         containerized=false 

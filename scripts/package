@@ -25,7 +25,7 @@ cp buildroot/output/target/usr/libexec/ipsec/charon /source/bin/
 # save etc
 cp -rp buildroot/output/target/var/lib/rancher/k3s/agent/* /source/etc/
 
-cp -r /source/iptables-detect/* /source/xtables-bin/
+cp -r /source/iptables-detect/*.sh /source/xtables-bin/
 
 # setup links
 link() { \
