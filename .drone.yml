@@ -25,6 +25,9 @@ steps:
     - "tar cf - -C /workdir ./bin ./etc > /workdir/dist/k3s-root-amd64.tar"
     - "tar cf - -C /workdir --transform s/xtables-bin/bin/ ./xtables-bin > /workdir/dist/k3s-root-xtables-amd64.tar"
     when:
+      instance:
+      - drone-publish.rancher.io
+      - drone.fremont.rancherlabs.com
       ref:
       - refs/head/master
       - refs/tags/*
@@ -43,6 +46,9 @@ steps:
       files:
       - "/workdir/dist/k3s-*.tar"
     when:
+      instance:
+      - drone-publish.rancher.io
+      - drone.fremont.rancherlabs.com
       ref:
       - refs/head/master
       - refs/tags/*
@@ -79,6 +85,9 @@ steps:
     - "tar cf - -C /workdir ./bin ./etc > /workdir/dist/k3s-root-arm64.tar"
     - "tar cf - -C /workdir --transform s/xtables-bin/bin/ ./xtables-bin > /workdir/dist/k3s-root-xtables-arm64.tar"
     when:
+      instance:
+      - drone-publish.rancher.io
+      - drone.fremont.rancherlabs.com
       ref:
       - refs/head/master
       - refs/tags/*
@@ -97,6 +106,9 @@ steps:
       files:
       - "/workdir/dist/k3s-*.tar"
     when:
+      instance:
+      - drone-publish.rancher.io
+      - drone.fremont.rancherlabs.com
       ref:
       - refs/head/master
       - refs/tags/*
@@ -133,6 +145,9 @@ steps:
     - "tar cf - -C /workdir ./bin ./etc > /workdir/dist/k3s-root-arm.tar"
     - "tar cf - -C /workdir --transform s/xtables-bin/bin/ ./xtables-bin > /workdir/dist/k3s-root-xtables-arm.tar"
     when:
+      instance:
+      - drone-publish.rancher.io
+      - drone.fremont.rancherlabs.com
       ref:
       - refs/head/master
       - refs/tags/*
@@ -151,6 +166,9 @@ steps:
       files:
       - "/workdir/dist/k3s-*.tar"
     when:
+      instance:
+      - drone-publish.rancher.io
+      - drone.fremont.rancherlabs.com
       ref:
       - refs/head/master
       - refs/tags/*
@@ -187,6 +205,9 @@ steps:
     - "tar cf - -C /workdir ./bin ./etc > /workdir/dist/k3s-root-ppc64le.tar"
     - "tar cf - -C /workdir --transform s/xtables-bin/bin/ ./xtables-bin > /workdir/dist/k3s-root-xtables-ppc64le.tar"
     when:
+      instance:
+      - drone-publish.rancher.io
+      - drone.fremont.rancherlabs.com
       ref:
       - refs/head/master
       - refs/tags/*
@@ -205,6 +226,9 @@ steps:
       files:
       - "/workdir/dist/k3s-*.tar"
     when:
+      instance:
+      - drone-publish.rancher.io
+      - drone.fremont.rancherlabs.com
       ref:
       - refs/head/master
       - refs/tags/*

@@ -15,12 +15,24 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# This script is only meant for use when operating in a non-containerized environment but using non-host binaries (i.e. K3s with k3s-root)
+# This script is only meant for use when operating in a non-containerized 
+# environment but using non-host binaries (i.e. K3s with k3s-root), but 
+# will fall back to operating in a containerized environment if necessary. 
+# It relies on the underlying host system not having cgroups set up for PID 
+# 1, as this is how it detects whether it is operating in a containerized 
+# environment or not.
 
-# Four step process to inspect for which version of iptables we're operating with.
-# 1. Run iptables-nft-save and iptables-legacy-save to inspect for rules. If no rules are found from either binaries, then
-# 2. Check /etc/alternatives/iptables on the host to see if there is a symlink pointing towards the iptables binary we are using, if there is, run the binary and grep it's output for version higher than 1.8 and "legacy" to see if we are operating in legacy
-# 3. Last chance is to do a rough check of the operating system, to make an educated guess at which mode we can operate in.
+# Four step process to inspect for which version of iptables we're operating 
+# with.
+# 1. Detect whether we are operating in a containerized environment by inspecting cgroups for PID 1.
+# 2. Run iptables-nft-save and iptables-legacy-save to inspect for rules. If 
+# no rules are found from either binaries, then
+# 3. Check /etc/alternatives/iptables on the host to see if there is a symlink 
+# pointing towards the iptables binary we are using, if there is, run the 
+# binary and grep it's output for version higher than 1.8 and "legacy" to see 
+# if we are operating in legacy
+# 4. Last chance is to do a rough check of the operating system, to make an 
+# educated guess at which mode we can operate in.
 
 # Bugs in iptables-nft 1.8.3 may cause it to get stuck in a loop in
 # some circumstances, so we have to run the nft check in a timeout. To
@@ -29,16 +41,20 @@
 
 mode=unknown
 
-containerized=false 
+detected_via=unknown
+
+containerized=false
 
 # Check to see if the nf_tables kernel module is loaded, if it is, we should operate in nft mode, else just fall back to legacy. This should only be run when in a container, ideally the klipper-lb container. 
 
 nft_module_check() {
     lsmod | grep "nf_tables" 2> /dev/null
     if [ $? = 0 ]; then
-        mode = nft
+        detected_via=modules
+        mode=nft
     else
-        mode = legacy
+        detected_via=modules
+        mode=legacy
     fi
 }
 
@@ -60,14 +76,17 @@ rule_check() {
         ip6tables-legacy-save || true
     ) 2>/dev/null | grep '^-' | wc -l)
     if [ "${num_legacy_lines}" -ge 10 ]; then
+        detected_via=rules
         mode=legacy
     else
         num_nft_lines=$( (timeout 5 sh -c "iptables-nft-save; ip6tables-nft-save" || true) 2>/dev/null | grep '^-' | wc -l)
         if [ "${num_legacy_lines}" -gt "${num_nft_lines}" ]; then
+            detected_via=rules
             mode=legacy
         elif [ "${num_nft_lines}" = 0 ]; then
             mode=unknown
         else
+            detected_via=rules
             mode=nft
         fi
     fi
@@ -79,8 +98,10 @@ alternatives_check() {
     if [ $? = 0 ]; then
         readlink /etc/alternatives/iptables | grep -q "nft"
         if [ $? = 0 ]; then
+            detected_via=alternatives
             mode=nft
         else
+            detected_via=alternatives
             mode=legacy
         fi
     fi
@@ -124,43 +145,42 @@ os_detect() {
     case "$lsb_dist" in
 
     ubuntu)
-        #if [ -z "$dist_version" ] && [ -r /etc/lsb-release ]; then
-        #    dist_version="$(. /etc/lsb-release && echo "$DISTRIB_RELEASE" | sed 's/\/.*//' | sed 's/\..*//')"
-        #    if [ "$dist_version" -ge 20 ]; then
-        #        mode=nft
-        #    else
-        #        mode=legacy
-        #    fi
-        #else
-        #    # fall back to NFT
-        #    mode=nft
-        #fi
+        # By default, Ubuntu is using iptables in legacy mode. Ideally, this should have been already caught by the alternatives check.
+        detected_via=os
         mode=legacy
-        #By default, Ubuntu is using iptables in legacy mode. Ideally, this should have been already caught by the alternatives check.
         ;;
 
     debian | raspbian)
         dist_version="$(cat /etc/debian_version | sed 's/\/.*//' | sed 's/\..*//')"
         # If Debian >= 10 (Buster is 10), then NFT. otherwise, assume it is legacy
         if [ "$dist_version" -ge 10 ]; then
+            detected_via=os
             mode=nft
         else
+            detected_via=os
             mode=legacy
         fi
         ;;
 
     oracleserver)
-        # need to switch lsb_dist to match yum repo URL
-        lsb_dist="oraclelinux"
-        dist_version="$(rpm -q --whatprovides redhat-release --queryformat "%{VERSION}\n" | sed 's/\/.*//' | sed 's/\..*//' | sed 's/Server*//')"
+        dist_version="$(. /etc/os-release && echo "$VERSION_ID")"
+        if [ "$dist_version" -ge 8 ]; then
+            detected_via=os
+            mode=nft
+        else
+            detected_via=os
+            mode=legacy
+        fi
         ;;
 
     fedora)
         # As of 05/15/2020, all Fedora packages appeared to be still `legacy` by default although there is a `iptables-nft` package that installs the nft iptables, so look for that package.
         rpm -qa | grep -q "iptables-nft"
         if [ $? = 0 ]; then
+            detected_via=os
             mode=nft
         else
+            detected_via=os
             mode=legacy
         fi
         ;;
@@ -168,14 +188,17 @@ os_detect() {
     centos | redhat)
         dist_version="$(. /etc/os-release && echo "$VERSION_ID")"
         if [ "$dist_version" -ge 8 ]; then
+            detected_via=os
             mode=nft
         else
+            detected_via=os
             mode=legacy
         fi
         ;;
 
         # We are running an operating system we don't know, default to nf_tables.
     *)
+        detected_via=os
         mode=nft
         ;;
 
@@ -203,6 +226,11 @@ fi
 
 if [ "${mode}" = "unknown" ]; then
     exit 1
+fi
+
+if [ "$(basename $0)" = "iptables-detect.sh" ]; then
+    echo mode is $mode detected via $detected_via and containerized is $containerized
+    exit 0
 fi
 
 xtables-set-mode.sh -m ${mode} >/dev/null
