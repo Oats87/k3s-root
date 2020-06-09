@@ -18,20 +18,6 @@ steps:
     volumes:
     - name: docker
       path: /var/run/docker.sock
-  - name: stage-amd64-binaries
-    image: ubuntu:18.04
-    commands:
-    - "mkdir -p /workdir/dist"
-    - "tar cf - -C /workdir ./bin ./etc > /workdir/dist/k3s-root-amd64.tar"
-    - "tar cf - -C /workdir --transform s/xtables-bin/bin/ ./xtables-bin > /workdir/dist/k3s-root-xtables-amd64.tar"
-    when:
-      instance:
-      - drone-publish.rancher.io
-      ref:
-      - refs/head/master
-      - refs/tags/*
-      event:
-      - tag
   - name: github-amd64-binary-release
     image: plugins/github-release
     settings:
@@ -43,7 +29,7 @@ steps:
       checksum_flatten: true
       prerelease: true
       files:
-      - "/workdir/dist/k3s-*.tar"
+      - "/workdir/dist/k3s-*amd64.tar"
     when:
       instance:
       - drone-publish.rancher.io
@@ -76,20 +62,6 @@ steps:
     volumes:
     - name: docker
       path: /var/run/docker.sock
-  - name: stage-arm64-binaries
-    image: ubuntu:18.04
-    commands:
-    - "mkdir -p /workdir/dist"
-    - "tar cf - -C /workdir ./bin ./etc > /workdir/dist/k3s-root-arm64.tar"
-    - "tar cf - -C /workdir --transform s/xtables-bin/bin/ ./xtables-bin > /workdir/dist/k3s-root-xtables-arm64.tar"
-    when:
-      instance:
-      - drone-publish.rancher.io
-      ref:
-      - refs/head/master
-      - refs/tags/*
-      event:
-      - tag
   - name: github-arm64-binary-release
     image: plugins/github-release
     settings:
@@ -101,7 +73,7 @@ steps:
       checksum_flatten: true
       prerelease: true
       files:
-      - "/workdir/dist/k3s-*.tar"
+      - "/workdir/dist/k3s-*arm64.tar"
     when:
       instance:
       - drone-publish.rancher.io
@@ -134,20 +106,6 @@ steps:
     volumes:
     - name: docker
       path: /var/run/docker.sock
-  - name: stage-arm-binaries
-    image: ubuntu:18.04
-    commands:
-    - "mkdir -p /workdir/dist"
-    - "tar cf - -C /workdir ./bin ./etc > /workdir/dist/k3s-root-arm.tar"
-    - "tar cf - -C /workdir --transform s/xtables-bin/bin/ ./xtables-bin > /workdir/dist/k3s-root-xtables-arm.tar"
-    when:
-      instance:
-      - drone-publish.rancher.io
-      ref:
-      - refs/head/master
-      - refs/tags/*
-      event:
-      - tag
   - name: github-arm-binary-release
     image: plugins/github-release
     settings:
@@ -159,7 +117,7 @@ steps:
       checksum_flatten: true
       prerelease: true
       files:
-      - "/workdir/dist/k3s-*.tar"
+      - "/workdir/dist/k3s-*arm.tar"
     when:
       instance:
       - drone-publish.rancher.io
@@ -192,20 +150,6 @@ steps:
     volumes:
     - name: docker
       path: /var/run/docker.sock
-  - name: stage-ppc64le-binaries
-    image: ubuntu:18.04
-    commands:
-    - "mkdir -p /workdir/dist"
-    - "tar cf - -C /workdir ./bin ./etc > /workdir/dist/k3s-root-ppc64le.tar"
-    - "tar cf - -C /workdir --transform s/xtables-bin/bin/ ./xtables-bin > /workdir/dist/k3s-root-xtables-ppc64le.tar"
-    when:
-      instance:
-      - drone-publish.rancher.io
-      ref:
-      - refs/head/master
-      - refs/tags/*
-      event:
-      - tag
   - name: github-ppc64le-binary-release
     image: plugins/github-release
     settings:
@@ -217,7 +161,7 @@ steps:
       checksum_flatten: true
       prerelease: true
       files:
-      - "/workdir/dist/k3s-*.tar"
+      - "/workdir/dist/k3s-*ppc64le.tar"
     when:
       instance:
       - drone-publish.rancher.io

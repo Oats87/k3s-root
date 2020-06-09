@@ -1,7 +1,6 @@
 #!/bin/sh
 set -ex
 
-mkdir -p bin xtables-bin etc dist
 if [ -e ./scripts/"$1" ]; then
     ./scripts/"$@"
 else

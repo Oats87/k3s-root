@@ -19,7 +19,7 @@ RUN apt-get install -y \
     unzip
 
 ENV DAPPER_SOURCE /source
-ENV DAPPER_OUTPUT ./bin ./etc ./dist ./xtables-bin
+ENV DAPPER_OUTPUT ./artifacts ./dist
 ENV DAPPER_ENV BUILDARCH
 ENV HOME ${DAPPER_SOURCE}
 WORKDIR ${DAPPER_SOURCE}
