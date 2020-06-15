@@ -33,6 +33,7 @@ steps:
     when:
       instance:
       - drone-publish.rancher.io
+      - drone.fremont.rancherlabs.com
       ref:
       - refs/head/master
       - refs/tags/*
@@ -77,6 +78,7 @@ steps:
     when:
       instance:
       - drone-publish.rancher.io
+      - drone.fremont.rancherlabs.com
       ref:
       - refs/head/master
       - refs/tags/*
@@ -121,6 +123,7 @@ steps:
     when:
       instance:
       - drone-publish.rancher.io
+      - drone.fremont.rancherlabs.com
       ref:
       - refs/head/master
       - refs/tags/*
@@ -165,6 +168,7 @@ steps:
     when:
       instance:
       - drone-publish.rancher.io
+      - drone.fremont.rancherlabs.com
       ref:
       - refs/head/master
       - refs/tags/*
