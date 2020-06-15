@@ -46,9 +46,6 @@ name: k3s-root-linux-arm64
 platform:
   os: linux
   arch: amd64
-
-workspace:
-  path: /workdir
     
 steps:
   - name: build-arm64
@@ -91,9 +88,6 @@ name: k3s-root-linux-arm
 platform:
   os: linux
   arch: amd64
-
-workspace:
-  path: /workdir
     
 steps:
   - name: build-arm
@@ -136,9 +130,6 @@ name: k3s-root-linux-ppc64le
 platform:
   os: linux
   arch: amd64
-
-workspace:
-  path: /workdir
     
 steps:
   - name: build-ppc64le
